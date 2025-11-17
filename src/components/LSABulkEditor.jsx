@@ -18,10 +18,14 @@ export default function LSABulkEditor() {
   const sampleAccount = {
     accountId: '123-456-7890',
     accountName: 'Austin Plumbing Services',
-    currentBidStrategy: 'MANUAL_CPA',
-    currentBid: '45.00',
+    currentBidStrategy: '',
     currentWeeklyBudget: '350.00',
-    currentLocations: ['78701', '78702', '78703'],
+    currentLocations: [],
+    ratingScore: '4.5',
+    totalReviews: '375',
+    chargedLeads: '13',
+    phoneCalls: '17',
+    totalCost: '$1,235.00',
     status: 'pending' // pending, processing, success, error
   };
 
@@ -38,17 +42,63 @@ export default function LSABulkEditor() {
       const parsedAccounts = rows
         .filter(row => row.trim())
         .map((row, index) => {
-          const [accountId, accountName, bidStrategy, bid, weeklyBudget, locations] = row.split(',');
+          // Parse CSV handling quoted fields with commas
+          const columns = [];
+          let current = '';
+          let inQuotes = false;
+
+          for (let i = 0; i < row.length; i++) {
+            const char = row[i];
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              columns.push(current);
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          columns.push(current);
+
+          const [
+            businessName,
+            accountId,
+            category,
+            weeklyBudget,
+            bids,
+            ratingScore,
+            totalReviews,
+            impressions,
+            currentChargedLeads,
+            previousChargedLeads,
+            currentPhoneCalls,
+            previousPhoneCalls,
+            currentConnectedCalls,
+            previousConnectedCalls,
+            currentTotalCost,
+            previousTotalCost
+          ] = columns;
+
+          // Clean currency values (remove $, spaces, commas)
+          const cleanCurrency = (val) => {
+            if (!val) return '0.00';
+            return val.replace(/[\$,\s]/g, '');
+          };
+
           return {
             id: index,
-            accountId: accountId?.trim(),
-            accountName: accountName?.trim(),
-            currentBidStrategy: bidStrategy?.trim() || 'MANUAL_CPA',
-            currentBid: bid?.trim() || '0.00',
-            currentWeeklyBudget: weeklyBudget?.trim() || '0.00',
-            currentLocations: locations?.trim().split(';').filter(Boolean) || [],
+            accountId: accountId?.trim() || '',
+            accountName: businessName?.trim() || '',
+            currentBidStrategy: '',
+            currentWeeklyBudget: cleanCurrency(weeklyBudget),
+            currentLocations: [],
+            ratingScore: ratingScore?.trim() || 'N/A',
+            totalReviews: totalReviews?.trim().replace(/,/g, '') || '0',
+            chargedLeads: currentChargedLeads?.trim() || '0',
+            phoneCalls: currentPhoneCalls?.trim() || '0',
+            connectedCalls: currentConnectedCalls?.trim() || '0',
+            totalCost: currentTotalCost?.trim() || '$0.00',
             newBidStrategy: '',
-            newBid: '',
             newWeeklyBudget: '',
             newLocations: '',
             status: 'pending',
@@ -63,10 +113,10 @@ export default function LSABulkEditor() {
 
   // Download CSV template
   const downloadTemplate = () => {
-    const template = `Account ID,Account Name,Current Bid Strategy,Current Bid ($),Current Weekly Budget ($),Current Locations (semicolon separated)
-123-456-7890,Austin Plumbing Services,MANUAL_CPA,45.00,350.00,78701;78702;78703
-234-567-8901,Dallas HVAC Pros,MAXIMIZE_CONVERSIONS,,500.00,75201;75202;75203
-345-678-9012,Houston Electricians,MANUAL_CPA,38.50,400.00,77001;77002;77003`;
+    const template = `Business Name,Account ID,Category,Weekly Budget,Bids,Rating Score,Total Review,Impressions Last 2 Days,Current Period Charged Leads,Previous Period Charged Leads,Current Period Phone Calls,Previous Period Phone Calls,Current Period Connected Phone Calls,Previous Period Connected Phone Calls,Current Period Total Cost,Previous Period Total Cost
+Aspen Dental,3222772562,,$269.99 ,N/A,4.5,375,0,0,0,0,0,0,0,$0.00 ,$0.00
+Aspen Dental,5598182129,,$342.02 ,N/A,4.8,461,0,13,13,17,23,14,7,"$1,235.00 ","$1,235.00 "
+Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$1,170.00 "`;
 
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
