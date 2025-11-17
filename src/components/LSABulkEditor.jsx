@@ -174,7 +174,7 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
     setErrors([]);
 
     const accountsToProcess = accounts.filter(acc =>
-      acc.newBidStrategy || acc.newBid || acc.newWeeklyBudget || acc.newLocations
+      acc.newBidStrategy || acc.newWeeklyBudget || acc.newLocations
     );
 
     for (let i = 0; i < accountsToProcess.length; i++) {
