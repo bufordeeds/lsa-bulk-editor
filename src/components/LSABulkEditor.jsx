@@ -212,7 +212,7 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
   // Export results
   const exportResults = () => {
     const csv = [
-      'Account ID,Account Name,Status,Error Message,Old Bid Strategy,New Bid Strategy,Old Budget,New Budget,Old Locations,New Locations'
+      'Account ID,Account Name,Status,Error Message,Old Bid Strategy,New Bid Strategy,Old Budget,New Budget,Old Locations,New Locations,Rating,Reviews,Charged Leads,Phone Calls,Total Cost'
     ];
 
     accounts.forEach(acc => {
@@ -221,12 +221,17 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
         acc.accountName,
         acc.status,
         acc.errorMessage || '',
-        acc.currentBidStrategy,
-        acc.newBidStrategy || acc.currentBidStrategy,
+        acc.currentBidStrategy || 'Not set',
+        acc.newBidStrategy || acc.currentBidStrategy || 'Not set',
         acc.currentWeeklyBudget,
         acc.newWeeklyBudget || acc.currentWeeklyBudget,
-        acc.currentLocations.join(';'),
-        acc.newLocations || acc.currentLocations.join(';')
+        (acc.currentLocations || []).join(';'),
+        acc.newLocations || (acc.currentLocations || []).join(';'),
+        acc.ratingScore,
+        acc.totalReviews,
+        acc.chargedLeads,
+        acc.phoneCalls,
+        acc.totalCost
       ].join(','));
     });
 
@@ -248,7 +253,7 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
   };
 
   const accountsWithChanges = accounts.filter(acc =>
-    acc.newBidStrategy || acc.newBid || acc.newWeeklyBudget || acc.newLocations
+    acc.newBidStrategy || acc.newWeeklyBudget || acc.newLocations
   ).length;
 
   return (
@@ -257,7 +262,9 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">LSA Bulk Editor</h1>
-          <p className="text-gray-600">Manage bids, budgets, and location targeting across 145 Local Services Ads accounts</p>
+          <p className="text-gray-600">
+            Manage bids, budgets, and location targeting across {accounts.length > 0 ? accounts.length : 'your'} Local Services Ads accounts
+          </p>
         </div>
 
         {/* Upload Section */}
@@ -378,10 +385,10 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
 
               {viewMode === 'table' ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
-                        <th className="px-4 py-3 text-left">
+                        <th className="px-3 py-2 text-left">
                           <input
                             type="checkbox"
                             checked={selectedAccounts.size === accounts.length}
@@ -389,17 +396,21 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
                             className="w-4 h-4"
                           />
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Account</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Bid Strategy</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Weekly Budget</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Locations</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Status</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Account</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Rating</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Leads</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Calls</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Cost</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Bid Strategy</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Weekly Budget</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Locations</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {accounts.map((account) => (
                         <tr key={account.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             <input
                               type="checkbox"
                               checked={selectedAccounts.has(account.id)}
@@ -407,36 +418,55 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
                               className="w-4 h-4"
                             />
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             {getStatusIcon(account.status)}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             <div className="font-medium text-gray-900">{account.accountName}</div>
-                            <div className="text-sm text-gray-500">{account.accountId}</div>
+                            <div className="text-xs text-gray-500">{account.accountId}</div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
+                            <div className="flex items-center gap-1">
+                              <span className="text-yellow-500">★</span>
+                              <span>{account.ratingScore}</span>
+                            </div>
+                            <div className="text-xs text-gray-500">{account.totalReviews} reviews</div>
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            <div className="font-medium">{account.chargedLeads}</div>
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            <div className="font-medium">{account.phoneCalls}</div>
+                            <div className="text-xs text-gray-500">{account.connectedCalls} connected</div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="font-medium">{account.totalCost}</div>
+                          </td>
+                          <td className="px-3 py-2">
                             <select
-                              value={account.newBidStrategy || account.currentBidStrategy}
+                              value={account.newBidStrategy || account.currentBidStrategy || ''}
                               onChange={(e) => updateAccount(account.id, 'newBidStrategy', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                             >
+                              <option value="">Select...</option>
                               <option value="MANUAL_CPA">Manual CPA</option>
                               <option value="MAXIMIZE_CONVERSIONS">Maximize Conversions</option>
                             </select>
-                            {account.newBidStrategy && account.newBidStrategy !== account.currentBidStrategy && (
+                            {account.newBidStrategy && account.currentBidStrategy && account.newBidStrategy !== account.currentBidStrategy && (
                               <div className="text-xs text-blue-600 mt-1">
                                 Was: {account.currentBidStrategy}
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             <div className="flex items-center gap-1">
                               <span className="text-gray-600">$</span>
                               <input
                                 type="number"
+                                step="0.01"
                                 value={account.newWeeklyBudget || account.currentWeeklyBudget}
                                 onChange={(e) => updateAccount(account.id, 'newWeeklyBudget', e.target.value)}
-                                className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                className="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                               />
                             </div>
                             {account.newWeeklyBudget && account.newWeeklyBudget !== account.currentWeeklyBudget && (
@@ -445,16 +475,17 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             <input
                               type="text"
-                              value={account.newLocations || account.currentLocations.join(', ')}
+                              placeholder="Add zip codes..."
+                              value={account.newLocations || (account.currentLocations || []).join(', ')}
                               onChange={(e) => updateAccount(account.id, 'newLocations', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-32 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                             />
-                            {account.newLocations && account.newLocations !== account.currentLocations.join(', ') && (
+                            {account.newLocations && account.newLocations !== (account.currentLocations || []).join(', ') && (
                               <div className="text-xs text-blue-600 mt-1">
-                                Was: {account.currentLocations.join(', ')}
+                                {(account.currentLocations || []).length > 0 ? `Was: ${account.currentLocations.join(', ')}` : 'New'}
                               </div>
                             )}
                           </td>
@@ -465,21 +496,33 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {accounts.filter(acc => acc.newBidStrategy || acc.newBid || acc.newWeeklyBudget || acc.newLocations).map((account) => (
+                  {accounts.filter(acc => acc.newBidStrategy || acc.newWeeklyBudget || acc.newLocations).map((account) => (
                     <div key={account.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div>
                           <div className="font-semibold text-gray-900">{account.accountName}</div>
                           <div className="text-sm text-gray-500">{account.accountId}</div>
+                          <div className="flex gap-4 text-xs text-gray-600 mt-1">
+                            <span>★ {account.ratingScore} ({account.totalReviews} reviews)</span>
+                            <span>{account.chargedLeads} leads</span>
+                            <span>{account.phoneCalls} calls</span>
+                            <span>{account.totalCost}</span>
+                          </div>
                         </div>
                         {getStatusIcon(account.status)}
                       </div>
                       <div className="grid grid-cols-2 gap-4 text-sm">
-                        {account.newBidStrategy && account.newBidStrategy !== account.currentBidStrategy && (
+                        {account.newBidStrategy && (
                           <div>
                             <div className="text-gray-600">Bid Strategy</div>
-                            <div className="font-medium text-red-600 line-through">{account.currentBidStrategy}</div>
-                            <div className="font-medium text-green-600">→ {account.newBidStrategy}</div>
+                            {account.currentBidStrategy ? (
+                              <>
+                                <div className="font-medium text-red-600 line-through">{account.currentBidStrategy}</div>
+                                <div className="font-medium text-green-600">→ {account.newBidStrategy}</div>
+                              </>
+                            ) : (
+                              <div className="font-medium text-green-600">→ {account.newBidStrategy}</div>
+                            )}
                           </div>
                         )}
                         {account.newWeeklyBudget && account.newWeeklyBudget !== account.currentWeeklyBudget && (
@@ -489,11 +532,17 @@ Aspen Dental,8744206294,,$324.03 ,N/A,4.3,548,0,15,13,19,19,17,0,"$1,172.52 ","$
                             <div className="font-medium text-green-600">→ ${account.newWeeklyBudget}</div>
                           </div>
                         )}
-                        {account.newLocations && account.newLocations !== account.currentLocations.join(', ') && (
+                        {account.newLocations && account.newLocations !== (account.currentLocations || []).join(', ') && (
                           <div className="col-span-2">
                             <div className="text-gray-600">Locations</div>
-                            <div className="font-medium text-red-600 line-through">{account.currentLocations.join(', ')}</div>
-                            <div className="font-medium text-green-600">→ {account.newLocations}</div>
+                            {(account.currentLocations || []).length > 0 ? (
+                              <>
+                                <div className="font-medium text-red-600 line-through">{account.currentLocations.join(', ')}</div>
+                                <div className="font-medium text-green-600">→ {account.newLocations}</div>
+                              </>
+                            ) : (
+                              <div className="font-medium text-green-600">→ {account.newLocations}</div>
+                            )}
                           </div>
                         )}
                       </div>
